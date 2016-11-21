@@ -1,0 +1,64 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-app.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-document.html">
+<link rel="import" href="../bower_components/polymerfire/firebase-query.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="tree-data">
+  <template>
+    <!-- Setup the app -->
+    <firebase-app
+        auth-domain="donation-tree.firebaseapp.com"
+        name="donation-tree"
+        database-url="https://donation-tree.firebaseio.com/"
+        api-key="AIzaSyABmjPVRGYhNwusgk97_dq0VTGFRDXSzpE">
+    </firebase-app>
+
+    <firebase-document
+        id="docu"
+        app-name="donation-tree"
+        path="/donations"
+        data="{{donationList}}"
+        log>
+    </firebase-document>
+
+    <firebase-query app-name="donation-tree" path="/donations" data="{{donations}}" transitions-complete="{{test(donations)}}"></firebase-query>
+
+    <paper-button raised on-tap="addDonation"> Button </paper-button>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'tree-data',
+
+        properties: {
+            donations:{
+                type: Object,
+                notify: true
+            },
+        },
+
+        addDonation: function(e) {
+            var idRef = Math.random().toString(36).substr(2, 5),
+                dbElement = this.$.docu;
+
+            dbElement.save('/donations', idRef);
+            dbElement.setStoredValue('/donations/' + idRef, {
+                    name: 'marc',
+                    value: '205'
+            });
+        },
+    });
+  </script>
+</dom-module>
