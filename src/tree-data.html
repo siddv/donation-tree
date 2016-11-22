@@ -9,14 +9,30 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../bower_components/polymer/polymer.html">
+
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+
 <link rel="import" href="../bower_components/polymerfire/firebase-app.html">
 <link rel="import" href="../bower_components/polymerfire/firebase-document.html">
 <link rel="import" href="../bower_components/polymerfire/firebase-query.html">
+
+<link rel="import" href="../bower_components/gold-cc-cvc-input/gold-cc-cvc-input.html">
+<link rel="import" href="../bower_components/gold-cc-input/gold-cc-input.html">
+
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="shared-styles.html">
 
 <dom-module id="tree-data">
   <template>
+    <style>
+
+      .button-group {
+        text-align: center;
+      }
+    </style>
     <!-- Setup the app -->
     <firebase-app
         auth-domain="donation-tree.firebaseapp.com"
@@ -33,9 +49,40 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         log>
     </firebase-document>
 
-    <firebase-query app-name="donation-tree" path="/donations" data="{{donations}}" transitions-complete="{{test(donations)}}"></firebase-query>
+    <firebase-query app-name="donation-tree" path="/donations" data="{{donations}}" transitions-complete=""></firebase-query>
 
-    <paper-button raised on-tap="addDonation"> Button </paper-button>
+    <iron-ajax
+        id="apiCall"
+        auto
+        url="http://localhost:8888/api"
+        params=''
+        handle-as="json"
+        on-response="handleResponse"
+        last-response="{{response}}"
+        debounce-duration="300"></iron-ajax>
+
+    <paper-button raised class="login-button" data-dialog="animated" on-click="clickHandler">Donate</paper-button>
+
+    <paper-dialog class="paper-dialog" id="animated" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+            <h3> Insert details </h3>
+            <!-- <paper-input id="passValue"></paper-input> -->
+
+            <paper-input id="donorName" label="Name"></paper-input>
+            <paper-input id="donorSurname" label="Surname"></paper-input>
+            <paper-input id="amount" label="Amount to donate"></paper-input>
+
+            <gold-cc-input id="creditCard"></gold-cc-input>
+            <gold-cc-cvc-input id="cvc"></gold-cc-cvc-input>
+
+            <paper-material class="button-group" elevation="0">
+                <paper-button raised class="log" on-click="getData">Submit</paper-button>
+                <paper-button raised class="cancel" on-click="cancelAction">Close</paper-button>
+            </paper-material>
+    </paper-dialog>
+
+    <!-- <div class="login-container"><paper-button class="login-button" data-dialog="animated">Login</paper-button></div> -->
+
+    <!-- <paper-button raised on-tap="addDonation"> Button </paper-button> -->
   </template>
 
   <script>
@@ -47,18 +94,66 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 type: Object,
                 notify: true
             },
+
+            callResp: {
+            },
+
+            foo: {
+              type: String,
+              value: 'vote-login',
+              notify: true
+            }
         },
 
-        addDonation: function(e) {
+        addDonation: function(details) {
             var idRef = Math.random().toString(36).substr(2, 5),
                 dbElement = this.$.docu;
 
             dbElement.save('/donations', idRef);
-            dbElement.setStoredValue('/donations/' + idRef, {
-                    name: 'marc',
-                    value: '205'
-            });
+            dbElement.setStoredValue('/donations/' + idRef, details);
+
+            // dbElement.setStoredValue('/donations/' + idRef, {details});
         },
+
+        handleResponse: function() {
+            // console.log("marameo");
+            console.log(this.response);
+            // console.log(this.callResp.value = this.response);
+        },
+
+        cancelAction: function() {
+            var dialog = this.$.animated;
+            dialog.close();
+        },
+
+        clickHandler: function(e) {
+            console.log(this.$.animated);
+            this.$.animated.open()
+        },
+
+        getData: function() {
+            var name = this.$.donorName.value,
+                surname = this.$.donorName.value,
+                cc = this.$.creditCard.value.replace(/\s/g,''),
+                cvc = this.$.cvc.value,
+                amount = this.$.amount.value,
+
+                isValid = this.response.cardNumber === cc && this.response.cvc === cvc;
+
+                console.log(this.response.cardNumber);
+
+            if (isValid) {
+                var donation = {
+                    name: name,
+                    surname: surname,
+                    amount: amount,
+                    cc: cc,
+                    cvc: cvc
+                };
+
+                this.addDonation(donation);
+            } else {};
+        }
     });
   </script>
 </dom-module>
